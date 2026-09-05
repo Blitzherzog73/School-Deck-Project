@@ -53,6 +53,7 @@ WRITE_RAM_RED_WHITE = const(0x26)
 DEEP_SLEEP = const(0x10)
 CHECK_CODE = const(0x01)
 
+DISPLAY_UPDATE_CONTROL_TWO = const(0x22)
 
 
 #logger = logging.getLogger(__name__)
@@ -159,6 +160,60 @@ class EPD:
         self.busy()
         
         return 0
+    
+    def test(self):
+        self.reset()
+
+        self.busy()
+        self.send_command(SWRESET)
+        self.busy()   
+
+        self.send_command(DRIVER_OUTPUT_CONTROL)   
+        self.send_data(0xf9)
+        self.send_data(0x00)
+        self.send_data(0x00)
+
+        self.send_command(DATA_ENTRY_MODE) # data entry mode       
+        self.send_data(0x01) #0x01
+
+        self.send_command(SET_RAM_X_ADDRESS_START_END_POSITION)
+        self.send_data(0x01)
+        self.send_data(0x10)
+        self.send_command(SET_RAM_Y_ADDRESS_START_END_POSITION)
+        self.send_data(0xF9)
+        self.send_data(0x00)
+        self.send_data(0x00)
+        self.send_data(0x00)
+        self.send_command(BORDER_WAVE_FROM) # BorderWavefrom
+        self.send_data(0x05)	
+
+        self.send_command(SET_RAM_X_ADDRESS_COUNTER)
+        self.send_data(0x01)
+        self.send_command(SET_RAM_Y_ADDRESS_COUNTER)
+        self.send_data(0xF9)
+        self.send_data(0x00)
+
+        #send image
+
+        
+        
+        return 0
+    
+    def image_update(self):
+        self.send_command(DISPLAY_UPDATE_CONTROL_TWO)
+        self.send_data(0XC7)
+        self.send_command(TURN_ON_DISPLAY)
+        
+    def set_image(self, buffer_black, buffer_red):
+        self.send_command(WRITE_RAM_BLACK_WHITE)
+        self.send_data2(buffer_black)
+        self.send_command(WRITE_RAM_RED_WHITE)
+        self.send_data2(buffer_red)
+        
+    def deep_sleep(self):
+        self.busy()
+        self.send_command(DEEP_SLEEP)
+        self.send_data(0X01)
 
     # turn on display
     def ondisplay(self):
