@@ -1,1 +1,1 @@
-# e-ink-2in13b_V4-driver-esp32c6-micropython
+# School-Deck Project
