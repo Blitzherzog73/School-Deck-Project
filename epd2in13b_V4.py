@@ -31,8 +31,8 @@
 from micropython import const
 
 # Display resolution
-EPD_WIDTH       = 122
-EPD_HEIGHT      = 250
+EPD_WIDTH       = 200
+EPD_HEIGHT      = 200
 
 
 '''command list'''
@@ -102,8 +102,11 @@ class EPD:
     # judge e-Paper whether is busy
     def busy(self):
         #logger.debug("e-Paper busy")
-        while(self.busy_pin.value() != 0): 
+        i = 0
+        while(self.busy_pin.value() != 0):
+            i = i + 1 
             sleep_ms(10)
+        print("e-Paper busy release: " + str(i) + " rounds")
         #logger.debug("e-Paper busy release")
 
     # set the display window
@@ -162,20 +165,23 @@ class EPD:
         return 0
     
     def test(self):
+        print("reset")
         self.reset()
 
         self.busy()
+        print("swreset")
         self.send_command(SWRESET)
         self.busy()   
 
+        print("output ctrl")
         self.send_command(DRIVER_OUTPUT_CONTROL)   
-        self.send_data(0xf9)
+        self.send_data(0xc7)
         self.send_data(0x00)
         self.send_data(0x00)
 
-        self.send_command(DATA_ENTRY_MODE) # data entry mode       
-        self.send_data(0x01) #0x01
-
+        #self.send_command(DATA_ENTRY_MODE) # data entry mode       
+        #self.send_data(0x01) #0x01
+        '''
         self.send_command(SET_RAM_X_ADDRESS_START_END_POSITION)
         self.send_data(0x01)
         self.send_data(0x10)
@@ -184,15 +190,17 @@ class EPD:
         self.send_data(0x00)
         self.send_data(0x00)
         self.send_data(0x00)
+        
         self.send_command(BORDER_WAVE_FROM) # BorderWavefrom
-        self.send_data(0x05)	
+        self.send_data(0x05)
+        	
 
         self.send_command(SET_RAM_X_ADDRESS_COUNTER)
         self.send_data(0x01)
         self.send_command(SET_RAM_Y_ADDRESS_COUNTER)
         self.send_data(0xF9)
         self.send_data(0x00)
-
+        '''
         #send image
 
         
@@ -200,15 +208,18 @@ class EPD:
         return 0
     
     def image_update(self):
-        self.send_command(DISPLAY_UPDATE_CONTROL_TWO)
-        self.send_data(0XC7)
+        #self.send_command(DISPLAY_UPDATE_CONTROL_TWO)
+        #self.send_data(0XC7)
+        print("turn on display")
         self.send_command(TURN_ON_DISPLAY)
+        self.busy()
         
-    def set_image(self, buffer_black, buffer_red):
+    def set_image(self, buffer_black):
+        print("send black data")
         self.send_command(WRITE_RAM_BLACK_WHITE)
         self.send_data2(buffer_black)
-        self.send_command(WRITE_RAM_RED_WHITE)
-        self.send_data2(buffer_red)
+        #self.send_command(WRITE_RAM_RED_WHITE)
+        #self.send_data2(buffer_red)
         
     def deep_sleep(self):
         self.busy()
