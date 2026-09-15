@@ -3,7 +3,7 @@ from micropython import const
 import time
 import neopixel
 import asyncio
-import epd2in13b_V4
+import e_ink_display_driver_mpython
 import framebuf
 
 height = 200
@@ -28,7 +28,7 @@ rst = Pin(1, Pin.OUT)
 busy = Pin(0, Pin.IN)
 spi = SoftSPI(baudrate=1000000, polarity=0, phase=0, sck=clk, mosi=din, miso=Pin(2)) #Pin 2 is an unsused pin
 
-epaper_display = epd2in13b_V4.EPD(spi=spi, cs=cs, dc=dc, rst=rst, busy=busy)
+epaper_display = e_ink_display_driver_mpython.EPD(spi=spi, cs=cs, dc=dc, rst=rst, busy=busy)
 
 led = Pin(8, Pin.OUT)
 debug_led = neopixel.NeoPixel(led, 1)

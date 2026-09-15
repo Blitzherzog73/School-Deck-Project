@@ -107,64 +107,9 @@ class EPD:
             i = i + 1 
             sleep_ms(10)
         print("e-Paper busy release: " + str(i) + " rounds")
-        #logger.debug("e-Paper busy release")
 
-    # set the display window
-    def set_windows(self, xstart, ystart, xend, yend):
-        self._send_command(SET_RAM_X_ADDRESS_START_END_POSITION)
-        self._send_data((xstart>>3) & 0xff)
-        self._send_data((xend>>3) & 0xff)
+
         
-        self._send_command(SET_RAM_Y_ADDRESS_START_END_POSITION)
-        self._send_data(ystart & 0xff)
-        self._send_data((ystart >> 8) & 0xff)
-        self._send_data(yend & 0xff)
-        self._send_data((yend >> 8) & 0xff)
-        
-    # set the display cursor(origin)
-    def set_cursor(self, xstart, ystart):
-        self._send_command(SET_RAM_X_ADDRESS_COUNTER)
-        self._send_data(xstart & 0xff)
-
-        self._send_command(SET_RAM_Y_ADDRESS_COUNTER)
-        self._send_data(ystart & 0xff)
-        self._send_data((ystart >> 8) & 0xff)
-
-    # initialize 
-    '''
-    def init(self):
-            
-        self.reset()
-
-        self.busy()
-        self.send_command(SWRESET)
-        self.busy()   
-
-        self.send_command(DRIVER_OUTPUT_CONTROL)   
-        self.send_data(0xf9)
-        self.send_data(0x00)
-        self.send_data(0x00)
-
-        self.send_command(DATA_ENTRY_MODE) # data entry mode       
-        self.send_data(0x03) #0x01
-
-        self.set_windows(0, 0, self.width - 1, self.height - 1)
-        self.set_cursor(0, 0)
-
-        self.send_command(BORDER_WAVE_FROM) # BorderWavefrom
-        self.send_data(0x05)	
-
-        self.send_command(READ_BUILT_IN_TEMPERATURE_SENSOR) # Read built-in temperature sensor
-        self.send_data(0x80)	
-
-        self.send_command(DISPLAY_UPDATE_CONTROL) # Display update control
-        self.send_data(0x80)	
-        self.send_data(0x80)
-
-        self.busy()
-        
-        return 0
-    '''
     def init(self):
         print("reset")
         self.reset()
@@ -180,35 +125,10 @@ class EPD:
         self.data_entry_mode()
         
         self.reset_display_size()
-        '''
-        self.send_command(SET_RAM_X_ADDRESS_START_END_POSITION)
-        self.send_data(0x01)
-        self.send_data(0x10)
-        self.send_command(SET_RAM_Y_ADDRESS_START_END_POSITION)
-        self.send_data(0xF9)
-        self.send_data(0x00)
-        self.send_data(0x00)
-        self.send_data(0x00)
-        
-        self.send_command(BORDER_WAVE_FROM) # BorderWavefrom
-        self.send_data(0x05)
-        	
-
-        self.send_command(SET_RAM_X_ADDRESS_COUNTER)
-        self.send_data(0x01)
-        self.send_command(SET_RAM_Y_ADDRESS_COUNTER)
-        self.send_data(0xF9)
-        self.send_data(0x00)
-        '''
-        #send image
-
         
         
-        return 0
     
     def image_update(self):
-        #self.send_command(DISPLAY_UPDATE_CONTROL_TWO)
-        #self.send_data(0XC7)
         print("turn on display")
         self._send_command(TURN_ON_DISPLAY)
         self.busy()
@@ -219,8 +139,6 @@ class EPD:
             self._send_command(WRITE_RAM_BLACK_WHITE)
             self._send_data2(buffer_black)
         else:
-            #self._send_data2(self.renderbuf_black)
-            #return
             if self.lower_right_window_corner != None and self.upper_left_window_corner != None:
                 new_area_data = self.calculate_area(self.upper_left_window_corner, self.lower_right_window_corner)
                 x1 = self.upper_left_window_corner.x
@@ -252,8 +170,6 @@ class EPD:
             else:
                 self._send_command(WRITE_RAM_BLACK_WHITE)
                 self._send_data2(self.renderbuf_black)
-        #self.send_command(WRITE_RAM_RED_WHITE)
-        #self.send_data2(buffer_red)
         
     def deep_sleep(self):
         self.busy()
@@ -269,42 +185,6 @@ class EPD:
         buffer = bytearray(((width + 7)// 8) * height)
         return [buffer, width, height]
 
-    # turn on display
-    def ondisplay(self):
-        self._send_command(TURN_ON_DISPLAY)
-        self.busy()
-
-
-    # display image
-    def display(self, imageblack, imagered):
-        self._send_command(WRITE_RAM_BLACK_WHITE)
-        self._send_data2(imageblack)
-        
-        self._send_command(WRITE_RAM_RED_WHITE)
-        self._send_data2(imagered)
-        
-        self.ondisplay()
-        
-    # display white image
-    def clear(self):
-        if self.width%8 == 0:
-            linewidth = int(self.width/8)
-        else:
-            linewidth = int(self.width/8) + 1
-            
-        buf = [0xff] * (int(linewidth * self.height))
-            
-        self._send_command(WRITE_RAM_BLACK_WHITE)
-        self._send_data2(bytearray(buf))
-        
-        self._send_command(WRITE_RAM_RED_WHITE)
-        self._send_data2(bytearray(buf))
-        
-        self.ondisplay()
-
-    # Compatible with older version functions
-    def Clear(self):
-        self.clear()
         
     def update_window(self, x1 = None, x2 = None, y1 = None, y2 = None):
         if self.lower_right_window_corner == None and self.upper_left_window_corner == None:
@@ -378,40 +258,6 @@ class EPD:
         self.update_window(0, self.width - 1, 0, self.height - 1)
         #self.update_window(0, )
         
-    def partial_line(self, colour, x1, y1, x2, y2):
-        self._send_command(SET_RAM_X_ADDRESS_START_END_POSITION)
-        self._send_data(0x04)
-        self._send_data(0x08)
-        self._send_command(SET_RAM_Y_ADDRESS_START_END_POSITION)
-        self._send_data(0x08)
-        self._send_data(0x00)
-        self._send_data(0x04)
-        self._send_data(0x00)
-        self._send_command(SET_RAM_X_ADDRESS_COUNTER)
-        self._send_data(0x04)
-        self._send_command(SET_RAM_Y_ADDRESS_COUNTER)
-        self._send_data(0x04)
-        self._send_data(0x00)
-        length = 5 * 8
-        partial_buffer = bytearray(length * length // 8)
-        partial_framebuffer = framebuf.FrameBuffer(partial_buffer, length, length, framebuf.MONO_HLSB)
-        partial_framebuffer.line(x1, y1, x2, y2, colour)
-        self.set_image(partial_buffer)
-        
-    def partial_fill(self, colour):
-        self._send_command(SET_RAM_X_ADDRESS_START_END_POSITION)
-        self._send_data(0x00)
-        self._send_data(0x0C)
-        self._send_command(SET_RAM_Y_ADDRESS_START_END_POSITION)
-        self._send_data(0xC7)
-        self._send_data(0x00)
-        self._send_data(0x67)
-        self._send_data(0x00)
-        length = 12 * 8
-        partial_buffer = bytearray(length * length // 8)
-        partial_framebuffer = framebuf.FrameBuffer(partial_buffer, length, length, framebuf.MONO_HLSB)
-        partial_framebuffer.fill(colour)
-        self.set_image(partial_buffer)
         
     def set_partial_refresh(self, x1, y1, x2, y2):
         self._send_command(SET_RAM_X_ADDRESS_START_END_POSITION)
