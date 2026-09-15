@@ -49,7 +49,12 @@ def clear_display():
 def test():
     print("start test")
     time.sleep(2)
-    color = black
+    color = white
+    x1 = 40
+    x2 = 119
+    y1 = 119
+    y2 = 40
+    '''
     for i in range(3):
         print("starting round: " + str(i))
         c = ""
@@ -58,19 +63,38 @@ def test():
         elif color == white:
             c = "white"
         print("display colour: " + c)
-        epaper_display.test()
-        fbuf_black.fill(color)
-        if color == black:
-            color = white
-        elif color == white:
-            color = black
-        #fbuf_red.fill(white)
-        epaper_display.set_image(renderbuf_black)
-        epaper_display.image_update()
-        epaper_display.deep_sleep()
-        print("after deep sleep")
-        time.sleep(15)
-        print("15 sec tick")
+        '''
+    '''
+    if color == black:
+        color = white
+    elif color == white:
+        color = black
+    '''
+    #fbuf_red.fill(white)
+    epaper_display.init()
+    #epaper_display.reset_display_size()
+    #epaper_display.set_partial_refresh(x1, y1, x2, y2)
+    #partial_buffer = bytearray((x2 - x1 + 1) * (y1 - y2 + 1)//8)
+    #print("partial buffer: " + str(partial_buffer))
+    #partial_framebuffer = framebuf.FrameBuffer(partial_buffer, 200, 100, framebuf.MONO_HLSB)
+    
+    #partial_framebuffer.fill(black)
+    #epaper_display.fill(white)
+    #epaper_display.line(black, 0, 0, 150, 100)
+    #epaper_display.line(black, 0, 0, 0, 4)
+    #epaper_display.line(black, 7, 0, 7, 199)
+    #epaper_display.line(black, 75, 10, 199, 60)
+    #epaper_display.line(black, 50, 0, 50, 199)
+    #epaper_display.line(black, 100, 0, 100, 199)
+    #fbuf_black.fill(white)
+    #epaper_display.set_image(renderbuf_black)
+    epaper_display.set_image()
+    
+    epaper_display.image_update()
+    epaper_display.deep_sleep()
+    print("after deep sleep")
+    time.sleep(15)
+    print("15 sec tick")
     #epaper_display.sleep()
     #clear_display()
     #fbuf_black.fill(white)
