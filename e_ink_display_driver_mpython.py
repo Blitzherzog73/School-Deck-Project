@@ -2,6 +2,7 @@
 from micropython import const
 import framebuf
 from time import sleep_ms
+import array
 
 # Display resolution
 EPD_WIDTH       = const(200)
@@ -155,12 +156,12 @@ class EPD:
                     new_height = new_area_data[2]
                     print("width: " + str(new_width))
                     print("height: " + str(new_height))
-                    print("buffer: " + str(bytearray(((new_width+7)// 8) * new_height)))
+                    #print("buffer: " + str(bytearray(((new_width+7)// 8) * new_height)))
                     new_framebuffer = framebuf.FrameBuffer(new_buffer, new_width, new_height, framebuf.MONO_HLSB)
                     print("x1: " + str(x1))
                     print("y1: " + str(y1))
                     new_framebuffer.blit(self.fbuf_black, -x1, -y1)
-                    print("blitted buffer: " + str(new_buffer))
+                    #print("blitted buffer: " + str(new_buffer))
                     self.set_partial_refresh(x1, y1, x2, y2)
                     self._send_command(WRITE_RAM_BLACK_WHITE)
                     self._send_data2(new_buffer)
@@ -214,28 +215,36 @@ class EPD:
             self.lower_right_window_corner = None
             self.upper_left_window_corner = Point()
             self.lower_right_window_corner = Point()
-            if old_left_x > x1:
-                self.upper_left_window_corner.x = x1
-            elif old_left_x > x2:
-                self.upper_left_window_corner.x = x2
+            left_x = None
+            right_x = None
+            upper_y = None
+            bottom_y = None
+            if x1 <= x2:
+                left_x = x1
+                right_x = x2
+            elif x1 > x2:
+                left_x = x2
+                right_x = x1
+            if y1 <= y2:
+                upper_y = y1
+                bottom_y = y2
+            elif y1 > y2:
+                upper_y = y2
+                bottom_y = y1
+            if old_left_x > left_x:
+                self.upper_left_window_corner.x = left_x
             else:
                 self.upper_left_window_corner.x = old_left_x
-            if old_right_x < x1:
-                self.lower_right_window_corner.x = x1
-            elif old_right_x < x2:
-                self.lower_right_window_corner.x = x2
+            if old_right_x < right_x:
+                self.lower_right_window_corner.x = right_x
             else:
                 self.lower_right_window_corner.x = old_right_x
-            if old_upper_y > y1:
-                self.upper_left_window_corner.y = y1
-            elif old_upper_y > y2:
-                self.upper_left_window_corner.y = y2
+            if old_upper_y > upper_y:
+                self.upper_left_window_corner.y = upper_y
             else:
                 self.upper_left_window_corner.y = old_upper_y
-            if old_lower_y < y1:
-                self.lower_right_window_corner.y = y1
-            elif old_lower_y < y2:
-                self.lower_right_window_corner.y = y2
+            if old_lower_y < bottom_y:
+                self.lower_right_window_corner.y = bottom_y
             else:
                 self.lower_right_window_corner.y = old_lower_y
                 
@@ -246,7 +255,7 @@ class EPD:
             
     
         
-    def line(self, colour, x1, y1, x2, y2):
+    def line(self, x1, y1, x2, y2, colour = black):
         print("line: " + str(x1) + "|" + str(y1) + " " + str(x2) + "|" + str(y2))
         #self.fbuf_black.fill(white)
         self.fbuf_black.line(x1, y1, x2, y2, colour)
@@ -258,6 +267,90 @@ class EPD:
         self.update_window(0, self.width - 1, 0, self.height - 1)
         #self.update_window(0, )
         
+    def rectangle(self, x, y, width, height, colour = black, fill = False):
+        self.fbuf_black.rect(x, y, width, height, colour, fill)
+        x1 = x
+        x2 = x + width - 1
+        y1 = y
+        y2 = y + height - 1
+        self.update_window(x1, x2, y1, y2)
+        
+    def circle(self, x , y, radius, colour = black, fill = False):
+        self.fbuf_black.ellipse(x, y, radius, radius, colour, fill)
+        x1 = x - radius + 1
+        x2 = x + radius - 1
+        y1 = y - radius
+        y2 = y + radius 
+        self.update_window(x1, x2, y1, y2)
+        
+    def ellipse(self, x , y, x_radius, y_radius, colour = black, fill = False):
+        self.fbuf_black.ellipse(x, y, x_radius, y_radius, colour, fill)
+        x1 = x - x_radius + 1
+        x2 = x + x_radius - 1
+        y1 = y - y_radius
+        y2 = y + y_radius 
+        self.update_window(x1, x2, y1, y2)
+        
+    def triangle(self, x0, y0, x1, y1, x2, y2, colour = black, fill = False):
+        coords = array.array('h', [x0, y0, x1, y1, x2, y2])
+        self.fbuf_black.poly(0, 0, coords, colour, fill)
+        left_x = min(x0, x1, x2)
+        right_x = max(x0, x1, x2)
+        up_y = min(y0, y1, y2)
+        bottom_y = max(y0, y1, y2)
+        self.update_window(left_x, right_x, up_y, bottom_y)
+        
+    def text(self, text, x, y, colour = black):
+        text_length = len(text)
+        y1 = y
+        y2 = y + 8 - 1
+        x1 = x
+        text_pixels = text_length * 8
+        x2 = x + text_pixels - 1
+        if x2 >= self.width:
+            all_lines_of_text = self.split_text(x1, text)
+            #print(all_lines_of_text)
+            row_count = 0
+            for row in all_lines_of_text:
+                new_x2 = x1 + (len(row) * 8)
+                new_y1 = y1 + (row_count * 8)
+                new_y2 = new_y1 + 8 - 1
+                print("row_index: " + str(row_count))
+                print("x1: " + str(x1))
+                print("new_x2: " + str(new_x2))
+                print("new_y1: " + str(new_y1))
+                print("new_y2: " + str(new_y2))
+                print(row)
+                self.fbuf_black.text(row, x1, new_y1, colour)
+                self.update_window(x1, new_x2, new_y1, new_y2)
+                row_count += 1
+        else:
+            self.fbuf_black.text(text, x, y, colour)
+            self.update_window(x1, x2, y1, y2)
+            
+    def split_text(self, x1, text):
+        print("split text start")
+        characters_fit_in_row = (self.width - x1 - 1) // 8
+        print("this is how many characters fit in one row: " + str(characters_fit_in_row))
+        text_split = []
+        current_character = 0
+        new_row_text = ""
+        for character in text:
+            if characters_fit_in_row < current_character + 1:
+                text_split.append(new_row_text)
+                print("new list of strings:")
+                print(text_split)
+                new_row_text = ""
+                current_character = 0
+            new_row_text += character
+            print("current character index: " + str(current_character))
+            print("current string: " + new_row_text)
+            current_character += 1
+        print("last row text: " + new_row_text)
+        text_split.append(new_row_text)
+        print("last state of list of strings:")
+        print(text_split)
+        return text_split
         
     def set_partial_refresh(self, x1, y1, x2, y2):
         self._send_command(SET_RAM_X_ADDRESS_START_END_POSITION)
@@ -273,19 +366,6 @@ class EPD:
         self._send_command(SET_RAM_Y_ADDRESS_COUNTER)
         self._send_data(y1)
         self._send_data(0x00)
-        '''
-        width = x2 - x1 + 1
-        height = y1 - y2 + 1
-        print("width: " + str(width))
-        print("height: " + str(height))
-        print("buffer: " + str(width//8 * height))
-        new_partial_buffer = bytearray(width//8 * height)
-        new_partial_framebuffer = framebuf.FrameBuffer(new_partial_buffer, width, height, framebuf.MONO_HLSB)
-        self.fbuf_black = None
-        self.renderbuf_black = None
-        self.fbuf_black = new_partial_framebuffer
-        self.renderbuf_black = new_partial_buffer
-        '''
         
         
     def reset_display_size(self):
