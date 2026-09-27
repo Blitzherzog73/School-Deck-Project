@@ -119,15 +119,15 @@ class EPD:
 
         print("output ctrl")
         self.output_control()
-
-        #self._send_command(DATA_ENTRY_MODE) # data entry mode       
-        #self._send_data(0x01) #0x01
         
         self.data_entry_mode()
         
         self.reset_display_size()
         
-        
+    def display_image(self, buffer = None):
+        self.init()
+        self.set_image(buffer)
+        self.image_update()
     
     def image_update(self):
         print("turn on display")
@@ -309,18 +309,11 @@ class EPD:
         x2 = x + text_pixels - 1
         if x2 >= self.width:
             all_lines_of_text = self.split_text(x1, text)
-            #print(all_lines_of_text)
             row_count = 0
             for row in all_lines_of_text:
                 new_x2 = x1 + (len(row) * 8)
                 new_y1 = y1 + (row_count * 8)
                 new_y2 = new_y1 + 8 - 1
-                print("row_index: " + str(row_count))
-                print("x1: " + str(x1))
-                print("new_x2: " + str(new_x2))
-                print("new_y1: " + str(new_y1))
-                print("new_y2: " + str(new_y2))
-                print(row)
                 self.fbuf_black.text(row, x1, new_y1, colour)
                 self.update_window(x1, new_x2, new_y1, new_y2)
                 row_count += 1
@@ -329,27 +322,18 @@ class EPD:
             self.update_window(x1, x2, y1, y2)
             
     def split_text(self, x1, text):
-        print("split text start")
         characters_fit_in_row = (self.width - x1 - 1) // 8
-        print("this is how many characters fit in one row: " + str(characters_fit_in_row))
         text_split = []
         current_character = 0
         new_row_text = ""
         for character in text:
             if characters_fit_in_row < current_character + 1:
                 text_split.append(new_row_text)
-                print("new list of strings:")
-                print(text_split)
                 new_row_text = ""
                 current_character = 0
             new_row_text += character
-            print("current character index: " + str(current_character))
-            print("current string: " + new_row_text)
             current_character += 1
-        print("last row text: " + new_row_text)
         text_split.append(new_row_text)
-        print("last state of list of strings:")
-        print(text_split)
         return text_split
         
     def set_partial_refresh(self, x1, y1, x2, y2):
